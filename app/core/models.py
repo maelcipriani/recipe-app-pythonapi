@@ -1,9 +1,12 @@
+from enum import Enum
+
 from django.db import models
 from django.contrib.auth.models import (
     AbstractBaseUser,
     BaseUserManager,
     PermissionsMixin,
 )
+from django.conf import settings
 
 
 class UserManager(BaseUserManager):
@@ -29,6 +32,7 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser, PermissionsMixin):
+    id = models.AutoField(primary_key=True)
     email = models.EmailField(max_length=255, unique=True)
     name = models.CharField(max_length=255)
     is_active = models.BooleanField(default=True)
@@ -37,3 +41,43 @@ class User(AbstractBaseUser, PermissionsMixin):
     objects = UserManager()
 
     USERNAME_FIELD = 'email'
+
+
+class RecipeCategory(models.TextChoices):
+    BREAKFAST = 'Breakfast'
+    LUNCH = 'Lunch'
+    DINNER = 'Dinner'
+    SNACK = 'Snack'
+    DESSERT = 'Dessert'
+    DRINK = 'Drink'
+    OTHER = 'Other'
+
+
+class Recipe(models.Model):
+    """Recipe object"""
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+    )
+    category = models.CharField(max_length=30, choices=RecipeCategory.choices, default=RecipeCategory.BREAKFAST)
+    title = models.CharField(max_length=255, blank=False, null=False)
+    time_minutes = models.IntegerField(default=0)
+    price = models.DecimalField(max_digits=5, decimal_places=2)
+    description = models.TextField(blank=True, null=True)
+    link = models.CharField(max_length=255, blank=True, null=True)
+    tags = models.ManyToManyField('Tag', blank=True)
+
+    def __str__(self):
+        return self.title
+
+
+class Tag(models.Model):
+    """Tag object"""
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+    )
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.name
